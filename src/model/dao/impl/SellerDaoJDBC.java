@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +67,28 @@ public class SellerDaoJDBC implements SellerDao {
 
 	@Override
 	public void update(Seller seller) {
-		// TODO Auto-generated method stub
+		
+PreparedStatement st = null;
+		
+		try {
+			
+			st = conn.prepareStatement("UPDATE Seller "
+					+ "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? "
+					+ "WHERE Id = ?");
+			
+			
+			st.setString(1, seller.getName());
+			st.setString(2, seller.getEmail());
+			st.setDate(3, java.sql.Date.valueOf(seller.getBirthDate()));
+			st.setDouble(4, seller.getBaseSalary());
+			st.setInt(5, seller.getDepartment().getId());
+			st.setInt(6, seller.getId());
+		
+		} catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		} finally {
+			DB.closeStatement(st);
+		}
 
 	}
 
@@ -196,6 +218,7 @@ public class SellerDaoJDBC implements SellerDao {
 		seller.setId(rs.getInt("Id"));
 		seller.setName(rs.getString("Name"));
 		seller.setEmail(rs.getString("Email"));
+		seller.setBirthDate(LocalDate.parse(rs.getDate("BirthDate").toString()));
 		seller.setBaseSalary(rs.getDouble("BaseSalary"));
 		seller.setDepartment(dep);
 		return seller;
