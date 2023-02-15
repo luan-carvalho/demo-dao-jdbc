@@ -26,38 +26,35 @@ public class SellerDaoJDBC implements SellerDao {
 	}
 
 	@Override
-	public void inset(Seller seller) {
-		
+	public void insert(Seller seller) {
+
 		PreparedStatement st = null;
-		
+
 		try {
-			
-			st = conn.prepareStatement("INSERT INTO Seller "
-					+ "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
-					+ "VALUES "
-					+ "(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
-			
-			
+
+			st = conn.prepareStatement("INSERT INTO Seller " + "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
+					+ "VALUES " + "(?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+
 			st.setString(1, seller.getName());
 			st.setString(2, seller.getEmail());
 			st.setDate(3, java.sql.Date.valueOf(seller.getBirthDate()));
 			st.setDouble(4, seller.getBaseSalary());
 			st.setInt(5, seller.getDepartment().getId());
-			
+
 			int result = st.executeUpdate();
-			
+
 			if (result > 0) {
 				ResultSet rs = st.getGeneratedKeys();
 				if (rs.next()) {
 					seller.setId(rs.getInt(1));
 				}
 				DB.closeResultSet(rs);
-				
+
 			} else {
 				throw new DbException("Unexpected error! No rows affected ");
 			}
-		
-		} catch(SQLException e) {
+
+		} catch (SQLException e) {
 			throw new DbException(e.getMessage());
 		} finally {
 			DB.closeStatement(st);
@@ -67,24 +64,22 @@ public class SellerDaoJDBC implements SellerDao {
 
 	@Override
 	public void update(Seller seller) {
-		
-PreparedStatement st = null;
-		
+
+		PreparedStatement st = null;
+
 		try {
-			
+
 			st = conn.prepareStatement("UPDATE Seller "
-					+ "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? "
-					+ "WHERE Id = ?");
-			
-			
+					+ "SET Name = ?, Email = ?, BirthDate = ?, BaseSalary = ?, DepartmentId = ? " + "WHERE Id = ?");
+
 			st.setString(1, seller.getName());
 			st.setString(2, seller.getEmail());
 			st.setDate(3, java.sql.Date.valueOf(seller.getBirthDate()));
 			st.setDouble(4, seller.getBaseSalary());
 			st.setInt(5, seller.getDepartment().getId());
 			st.setInt(6, seller.getId());
-		
-		} catch(SQLException e) {
+
+		} catch (SQLException e) {
 			throw new DbException(e.getMessage());
 		} finally {
 			DB.closeStatement(st);
@@ -94,7 +89,24 @@ PreparedStatement st = null;
 
 	@Override
 	public void deleteById(Integer id) {
-		// TODO Auto-generated method stub
+		
+		PreparedStatement st = null;
+		
+		try {
+			
+			st = conn.prepareStatement("DELETE FROM Seller "
+					+ "WHERE Id = ?");
+			
+			st.setInt(1, id);
+			
+			st.executeUpdate();
+			
+		} catch (SQLException e) {
+			throw new DbException(e.getMessage());
+		} finally {
+			DB.closeStatement(st);;
+		}
+		
 
 	}
 
@@ -103,69 +115,65 @@ PreparedStatement st = null;
 
 		PreparedStatement st = null;
 		ResultSet rs = null;
-		
+
 		try {
-			
-			st = conn.prepareStatement("select seller.*, department.Name as depName "
-					+ "from seller inner join department "
-					+ "on seller.departmentId = department.Id "
-					+ "where seller.Id = ?");
-			
+
+			st = conn.prepareStatement(
+					"select seller.*, department.Name as depName " + "from seller inner join department "
+							+ "on seller.departmentId = department.Id " + "where seller.Id = ?");
+
 			st.setInt(1, id);
 			rs = st.executeQuery();
-			
+
 			if (rs.next()) {
-				
+
 				Department dep = instantiateDepartment(rs);
 				Seller seller = instatiateSeller(rs, dep);
 				return seller;
-				
-				
+
 			} else {
 				return null;
 			}
-			
+
 		} catch (SQLException e) {
 			throw new DbException(e.getMessage());
 		} finally {
 			DB.closeStatement(st);
 			DB.closeResultSet(rs);
 		}
-		
+
 	}
-	
+
 	@Override
 	public List<Seller> findByDepartment(Department dp) {
-		
+
 		PreparedStatement st = null;
 		ResultSet rs = null;
 		List<Seller> list = new ArrayList<>();
 		Map<Integer, Department> map = new HashMap<>();
-		
+
 		try {
-			
+
 			st = conn.prepareStatement("select seller.*, department.Name as depName "
-					+ "from seller inner join department "
-					+ "on seller.departmentId = department.Id "
-					+ "where seller.departmentId = ? "
-					+ "order by Name");
-			
+					+ "from seller inner join department " + "on seller.departmentId = department.Id "
+					+ "where seller.departmentId = ? " + "order by Name");
+
 			st.setInt(1, dp.getId());
 			rs = st.executeQuery();
-			
+
 			while (rs.next()) {
 				Department dep = map.get(rs.getInt("DepartmentId"));
 				if (dep == null) {
 					dep = instantiateDepartment(rs);
 				}
-				
+
 				Seller seller = instatiateSeller(rs, dep);
 				list.add(seller);
-				
+
 			}
-			
+
 			return list;
-			
+
 		} catch (SQLException e) {
 			throw new DbException(e.getMessage());
 		} finally {
@@ -173,37 +181,36 @@ PreparedStatement st = null;
 			DB.closeResultSet(rs);
 		}
 	}
-	
+
 	@Override
 	public List<Seller> findAll() {
-		
+
 		PreparedStatement st = null;
 		ResultSet rs = null;
 		List<Seller> list = new ArrayList<>();
 		Map<Integer, Department> map = new HashMap<>();
-		
+
 		try {
-			
-			st = conn.prepareStatement("select seller.*, department.Name as depName "
-					+ "from seller inner join department "
-					+ "on seller.departmentId = department.Id "
-					+ "order by Name");
+
+			st = conn.prepareStatement(
+					"select seller.*, department.Name as depName " + "from seller inner join department "
+							+ "on seller.departmentId = department.Id " + "order by Name");
 
 			rs = st.executeQuery();
-			
+
 			while (rs.next()) {
 				Department dep = map.get(rs.getInt("DepartmentId"));
 				if (dep == null) {
 					dep = instantiateDepartment(rs);
 				}
-				
+
 				Seller seller = instatiateSeller(rs, dep);
 				list.add(seller);
-				
+
 			}
-			
+
 			return list;
-			
+
 		} catch (SQLException e) {
 			throw new DbException(e.getMessage());
 		} finally {
@@ -213,7 +220,7 @@ PreparedStatement st = null;
 	}
 
 	private Seller instatiateSeller(ResultSet rs, Department dep) throws SQLException {
-		
+
 		Seller seller = new Seller();
 		seller.setId(rs.getInt("Id"));
 		seller.setName(rs.getString("Name"));
@@ -222,17 +229,15 @@ PreparedStatement st = null;
 		seller.setBaseSalary(rs.getDouble("BaseSalary"));
 		seller.setDepartment(dep);
 		return seller;
-		
+
 	}
 
 	private Department instantiateDepartment(ResultSet rs) throws SQLException {
-		
+
 		Department dep = new Department();
 		dep.setId(rs.getInt("DepartmentId"));
 		dep.setName(rs.getString("depName"));
 		return dep;
 	}
-
-	
 
 }
